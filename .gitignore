@@ -1,0 +1,44 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.code-workspace
+
+# Local/private project files
+.env
+.env.*
+*.local
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.log
+
+# Generated exports
+exports/
+downloads/
+generated/
+*.pdf
+
+# ZIP/build packages
+*.zip
+
+# Node files, in case the project later becomes a Vite/React app
+node_modules/
+dist/
+build/
+.cache/
+.parcel-cache/
+.next/
+out/
+
+# Optional: ignore uploaded private company assets
+# Remove these lines if you want logos/fonts stored in GitHub.
+assets/fonts/
+assets/private/

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gabrielerizzilab Proposal Builder</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="page-header">
+      <div class="brand-block">
+        <button class="asset-button brand-mark-button" type="button" data-asset-target="brandMarkSrc" title="Change G logo" aria-label="Change G logo">
+          <span class="asset-preview" data-asset-image="brandMarkSrc" aria-hidden="true"></span>
+        </button>
+        <div>
+          <button class="asset-button brand-logo-button" type="button" data-asset-target="brandLogoSrc" title="Change logo text" aria-label="Change logo text">
+            <span class="asset-preview" data-asset-image="brandLogoSrc" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="document-title-block">
+        <div class="document-title" contenteditable="true" data-global-field="documentTitle">ESTIMATION</div>
+        <div class="document-subtitle" contenteditable="true" data-global-field="documentSubtitle">CREATIVE PROPOSAL</div>
+      </div>
+    </header>
+
+    <main id="proposalGrid" class="proposal-grid" aria-live="polite"></main>
+
+    <footer class="page-footer">
+      <section class="notes-block">
+        <h2 contenteditable="true" data-global-field="notesTitle">NOTES</h2>
+        <p contenteditable="true" data-global-field="notesBody">Every project is tailored with intention - aligned with your vision, designed to leave a lasting impression.</p>
+      </section>
+
+      <section class="footer-pillars">
+        <div class="pillar">
+          <span class="mini-icon target" aria-hidden="true"></span>
+          <span contenteditable="true" data-global-field="pillar1">ARTISTIC CONTENTS INCLUDED</span>
+        </div>
+        <div class="pillar">
+          <span class="mini-icon star" aria-hidden="true"></span>
+          <span contenteditable="true" data-global-field="pillar2">TAILORED FOR YOUR VISION</span>
+        </div>
+        <div class="pillar">
+          <span class="mini-icon sun" aria-hidden="true"></span>
+          <span contenteditable="true" data-global-field="pillar3">IMMERSIVE EXPERIENCE</span>
+        </div>
+        <div class="pillar">
+          <span class="mini-icon circle" aria-hidden="true"></span>
+          <span contenteditable="true" data-global-field="pillar4">EXTRAORDINARY EXECUTION</span>
+        </div>
+      </section>
+
+      <div class="template-note">
+        <span contenteditable="true" data-global-field="templateNoteTitle">TEMPLATE - EASY TO EDIT</span>
+        <small contenteditable="true" data-global-field="templateNoteBody">Simply click on any text or field to customize the content, scope or estimation range.</small>
+      </div>
+    </footer>
+  </div>
+
+  <input id="assetUploadInput" type="file" accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp" hidden />
+
+  <button id="exportButton" class="export-button" type="button">Download PNG</button>
+
+  <template id="cardTemplate">
+    <article class="proposal-card" data-box-id="">
+      <button class="drag-handle" type="button" draggable="true" title="Drag to reorder" aria-label="Drag to reorder">☰</button>
+      <button class="remove-card" type="button" title="Delete box" aria-label="Delete box">×</button>
+
+      <button class="side-add side-add-left" type="button" data-side="left" title="Add box left" aria-label="Add box left">+</button>
+      <button class="side-add side-add-right" type="button" data-side="right" title="Add box right" aria-label="Add box right">+</button>
+      <button class="side-add side-add-top" type="button" data-side="top" title="Add box above" aria-label="Add box above">+</button>
+      <button class="side-add side-add-bottom" type="button" data-side="bottom" title="Add box below" aria-label="Add box below">+</button>
+
+      <div class="card-inner">
+        <div class="title-row">
+          <h2 class="box-title" contenteditable="true" data-field="title"></h2>
+          <div class="title-underline"></div>
+        </div>
+        <p class="box-subtitle" contenteditable="true" data-field="subtitle"></p>
+
+        <div class="sections"></div>
+
+        <div class="estimate-row">
+          <span class="estimate-label" contenteditable="true" data-field="estimateLabel"></span>
+          <div class="estimate-values">
+            <span contenteditable="true" data-field="estimateMin"></span>
+            <span>-</span>
+            <span contenteditable="true" data-field="estimateMax"></span>
+          </div>
+        </div>
+        <small class="price-note" contenteditable="true" data-field="priceNote"></small>
+      </div>
+    </article>
+  </template>
+
+  <script src="assets/vendor/html2canvas.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
