@@ -321,13 +321,14 @@ button {
 
 .drag-handle::before {
   content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
   width: 13px;
-  height: 10px;
-  display: block;
-  background:
-    linear-gradient(currentColor 0 0) top / 100% 1px no-repeat,
-    linear-gradient(currentColor 0 0) center / 100% 1px no-repeat,
-    linear-gradient(currentColor 0 0) bottom / 100% 1px no-repeat;
+  height: 1px;
+  background: currentColor;
+  box-shadow: 0 -4px 0 currentColor, 0 4px 0 currentColor;
+  transform: translate(-50%, -50%);
 }
 
 .remove-card::before,
@@ -399,12 +400,20 @@ body.is-dragging-card {
   transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
-.side-add::before {
-  content: "+";
-  font-size: 30px;
-  font-weight: 300;
-  line-height: 1;
-  transform: translateY(-1px);
+.side-add::before,
+.side-add::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 17px;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.side-add::after {
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .proposal-card:hover .side-add {
@@ -597,7 +606,14 @@ body.is-dragging-card {
 
 .bullet-text {
   min-width: 0;
+  min-height: 1.3em;
   word-break: break-word;
+}
+
+.bullet-text[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 .remove-bullet {

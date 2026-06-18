@@ -412,6 +412,10 @@ function setStaticIcons() {
   });
 }
 
+function isTemplatePlaceholder(value) {
+  return /^\[\s*add\b.*\]$/i.test(String(value || "").trim());
+}
+
 function createSectionElement(box, section) {
   const sectionEl = document.createElement("section");
   sectionEl.className = "section";
@@ -448,7 +452,13 @@ function createSectionElement(box, section) {
     text.className = "bullet-text";
     text.contentEditable = "true";
     text.dataset.field = "bullet";
-    text.textContent = item;
+
+    if (isTemplatePlaceholder(item)) {
+      text.dataset.placeholder = item;
+      text.textContent = "";
+    } else {
+      text.textContent = item;
+    }
 
     const remove = document.createElement("button");
     remove.className = "remove-bullet";
@@ -538,7 +548,7 @@ function updateField(target) {
   if (field === "bullet") {
     const bulletItem = target.closest(".bullet-item");
     const index = Number(bulletItem.dataset.itemIndex);
-    section.items[index] = target.textContent.trim();
+    section.items[index] = target.textContent.trim() || target.dataset.placeholder || "[ Add item ]";
   }
 
   persist();
