@@ -145,8 +145,8 @@ function makeBox(title = "ESSENCE") {
 }
 
 function sampleState() {
-  const essence = makeBox("ESSENCE");
-  const signature = makeBox("SIGNATURE");
+  const essence = makeBox("Essence");
+  const signature = makeBox("Signature");
   signature.subtitle = "For refined, immersive experiences\nwith curated artistic depth";
   signature.sections[0].items = ["Live music set", ""];
   signature.sections[2].items = ["Creative direction", "Stage coordination", ""];
@@ -158,7 +158,7 @@ function sampleState() {
 }
 
 function baseProjectState() {
-  return normalizeState({ globals: defaultGlobals(), rows: [[makeBox()]] });
+  return normalizeState(sampleState());
 }
 
 function styleById(styleId) {
@@ -341,7 +341,7 @@ function loadState() {
   } catch (error) {
     console.warn("Could not load saved proposal.", error);
   }
-  return normalizeState({ globals: defaultGlobals(), rows: [[makeBox()]] });
+  return baseProjectState();
 }
 
 function persist() {
@@ -729,13 +729,13 @@ function createSectionElement(box, section) {
   return sectionEl;
 }
 
-function render() {
+function render(rows = state.rows) {
   setGlobalText();
   setGlobalAssets();
   setStaticIcons();
   grid.innerHTML = "";
 
-  state.rows.forEach((row, rowIndex) => {
+  rows.forEach((row, rowIndex) => {
     const rowEl = document.createElement("div");
     rowEl.className = "grid-row";
     rowEl.dataset.rowIndex = String(rowIndex);
@@ -945,21 +945,72 @@ async function applyAssetUpload(file) {
   render();
 }
 
-function moveBoxBefore(draggedId, targetId) {
-  if (!draggedId || draggedId === targetId) return;
-  const target = findBox(targetId);
-  if (!target) return;
+function cloneRows(rows) {
+  return rows.map(row => row.slice());
+}
 
-  pushHistory();
-  const moved = removeBoxFromRows(draggedId);
-  if (!moved) return;
+function findBoxInRows(rows, boxId) {
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+    const colIndex = rows[rowIndex].findIndex(box => box.id === boxId);
+    if (colIndex !== -1) return { rowIndex, colIndex };
+  }
+  return null;
+}
 
-  const refreshedTarget = findBox(targetId);
-  if (!refreshedTarget) return;
-  state.rows[refreshedTarget.rowIndex].splice(refreshedTarget.colIndex, 0, moved);
-  sanitizeRows();
-  persist();
-  render();
+function swapBoxesInRows(rows, firstBoxId, secondBoxId) {
+  if (!firstBoxId || !secondBoxId || firstBoxId === secondBoxId) return false;
+
+  const first = findBoxInRows(rows, firstBoxId);
+  const second = findBoxInRows(rows, secondBoxId);
+  if (!first || !second) return false;
+
+  const firstBox = rows[first.rowIndex][first.colIndex];
+  rows[first.rowIndex][first.colIndex] = rows[second.rowIndex][second.colIndex];
+  rows[second.rowIndex][second.colIndex] = firstBox;
+  return true;
+}
+
+function captureCardRects() {
+  const rects = new Map();
+  document.querySelectorAll(".proposal-card").forEach(card => {
+    rects.set(card.dataset.boxId, card.getBoundingClientRect());
+  });
+  return rects;
+}
+
+function animateCardsFrom(previousRects) {
+  document.querySelectorAll(".proposal-card").forEach(card => {
+    const previous = previousRects.get(card.dataset.boxId);
+    if (!previous) return;
+
+    const next = card.getBoundingClientRect();
+    const dx = previous.left - next.left;
+    const dy = previous.top - next.top;
+    if (!dx && !dy) return;
+
+    card.style.transition = "none";
+    card.style.transform = `translate(${dx}px, ${dy}px)`;
+    requestAnimationFrame(() => {
+      card.style.transition = "";
+      card.style.transform = "";
+    });
+  });
+}
+
+function markDragPreview() {
+  if (!dragState) return;
+
+  document.querySelectorAll(".proposal-card").forEach(card => {
+    card.classList.toggle("drag-source", card.dataset.boxId === dragState.boxId);
+  });
+}
+
+function renderDragPreview(previousRects) {
+  if (!dragState) return;
+
+  render(dragState.previewRows);
+  markDragPreview();
+  if (previousRects) animateCardsFrom(previousRects);
 }
 
 function waitForImages(root) {
@@ -1146,7 +1197,7 @@ function targetCardAtPoint(event) {
 function cleanupDrag() {
   if (!dragState) return;
 
-  dragState.sourceCard.classList.remove("drag-source");
+  document.querySelectorAll(".drag-source").forEach(card => card.classList.remove("drag-source"));
   dragState.ghost.remove();
   dragState = null;
   clearDragOver();
@@ -1161,15 +1212,17 @@ function handlePointerDrag(event) {
 
   event.preventDefault();
   updateDragGhost(event);
-  clearDragOver();
 
   const card = targetCardAtPoint(event);
 
   if (card && card.dataset.boxId !== dragState.boxId) {
-    card.classList.add("drag-over");
-    dragState.targetId = card.dataset.boxId;
-  } else {
-    dragState.targetId = null;
+    const previousRects = captureCardRects();
+    const didSwap = swapBoxesInRows(dragState.previewRows, dragState.boxId, card.dataset.boxId);
+
+    if (didSwap) {
+      dragState.hasMoved = true;
+      renderDragPreview(previousRects);
+    }
   }
 }
 
@@ -1177,14 +1230,21 @@ function finishPointerDrag(event) {
   if (!dragState) return;
 
   event.preventDefault();
-  const { boxId, targetId } = dragState;
+  const { hasMoved, originalSnapshot, previewRows } = dragState;
   cleanupDrag();
 
-  if (targetId) moveBoxBefore(boxId, targetId);
+  if (!hasMoved) return;
+
+  state.rows = previewRows;
+  sanitizeRows();
+  pushHistoryFrom(originalSnapshot);
+  persist();
+  render();
 }
 
 function cancelPointerDrag() {
   cleanupDrag();
+  render();
 }
 
 function startPointerDrag(event) {
@@ -1209,11 +1269,12 @@ function startPointerDrag(event) {
 
   dragState = {
     boxId: sourceCard.dataset.boxId,
-    sourceCard,
     ghost,
     offsetX: event.clientX - rect.left,
     offsetY: event.clientY - rect.top,
-    targetId: null
+    originalSnapshot: snapshot(),
+    previewRows: cloneRows(state.rows),
+    hasMoved: false
   };
 
   sourceCard.classList.add("drag-source");
