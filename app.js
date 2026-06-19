@@ -1132,6 +1132,92 @@ function markEmptyExportBullets() {
   return hiddenItems;
 }
 
+const EXPORT_LAYOUT_WIDTH = 1600;
+const EXPORT_FRAME_EXTRA_HEIGHT = 80;
+
+function sameOriginStylesheetHrefs() {
+  return Array.from(document.querySelectorAll('link[rel="stylesheet"][href]'))
+    .map(link => link.href)
+    .filter(Boolean);
+}
+
+function waitForStylesheets(doc) {
+  const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'));
+
+  return Promise.all(links.map(link => new Promise(resolve => {
+    try {
+      if (link.sheet) {
+        resolve();
+        return;
+      }
+    } catch (error) {
+      // Accessing cssRules can fail for cross-origin sheets. The load event below is enough.
+    }
+
+    link.addEventListener("load", resolve, { once: true });
+    link.addEventListener("error", resolve, { once: true });
+  })));
+}
+
+function waitForFrameAnimationFrame(frameWindow) {
+  return new Promise(resolve => {
+    frameWindow.requestAnimationFrame(() => {
+      frameWindow.requestAnimationFrame(resolve);
+    });
+  });
+}
+
+async function createFixedExportFrame(sourceElement) {
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.tabIndex = -1;
+  frame.style.position = "fixed";
+  frame.style.left = "-100000px";
+  frame.style.top = "0";
+  frame.style.width = `${EXPORT_LAYOUT_WIDTH}px`;
+  frame.style.height = "2400px";
+  frame.style.border = "0";
+  frame.style.visibility = "hidden";
+  frame.style.pointerEvents = "none";
+  document.body.appendChild(frame);
+
+  const doc = frame.contentDocument;
+  const stylesheetLinks = sameOriginStylesheetHrefs()
+    .map(href => `<link rel="stylesheet" href="${href.replace(/"/g, "&quot;")}">`)
+    .join("\n");
+
+  doc.open();
+  doc.write(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=${EXPORT_LAYOUT_WIDTH}, initial-scale=1">
+  ${stylesheetLinks}
+</head>
+<body class="is-editor-active is-exporting" data-style-id="${document.body.dataset.styleId || ""}"></body>
+</html>`);
+  doc.close();
+
+  const rootStyle = document.documentElement.getAttribute("style");
+  if (rootStyle) doc.documentElement.setAttribute("style", rootStyle);
+
+  await waitForStylesheets(doc);
+
+  const clone = sourceElement.cloneNode(true);
+  clone.hidden = false;
+  doc.body.appendChild(clone);
+
+  if (doc.fonts?.ready) await doc.fonts.ready;
+  await waitForImages(clone);
+  await waitForFrameAnimationFrame(frame.contentWindow);
+
+  const exportHeight = Math.ceil(Math.max(clone.scrollHeight, clone.getBoundingClientRect().height));
+  frame.style.height = `${exportHeight + EXPORT_FRAME_EXTRA_HEIGHT}px`;
+  await waitForFrameAnimationFrame(frame.contentWindow);
+
+  return { frame, element: clone, width: EXPORT_LAYOUT_WIDTH, height: exportHeight };
+}
+
 async function downloadImage() {
   if (!window.html2canvas) {
     alert("The image export tool is still loading. Please try again in a moment.");
@@ -1141,22 +1227,25 @@ async function downloadImage() {
   const previousLabel = exportButton.textContent;
   exportButton.disabled = true;
   exportButton.textContent = "Preparing...";
-  document.body.classList.add("is-exporting");
+
+  const exportElement = document.querySelector(".app-shell");
   const hiddenExportBullets = markEmptyExportBullets();
+  let exportFrame = null;
 
   try {
     if (document.fonts?.ready) await document.fonts.ready;
-    const exportElement = document.querySelector(".app-shell");
     await waitForImages(exportElement);
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    exportFrame = await createFixedExportFrame(exportElement);
 
-    const canvas = await window.html2canvas(exportElement, {
+    const canvas = await window.html2canvas(exportFrame.element, {
       backgroundColor: activeStyle().exportBackground,
       scale: Math.max(3, Math.min(4, window.devicePixelRatio || 1)),
       useCORS: true,
       allowTaint: false,
-      windowWidth: exportElement.scrollWidth,
-      windowHeight: exportElement.scrollHeight,
+      width: exportFrame.width,
+      height: exportFrame.height,
+      windowWidth: exportFrame.width,
+      windowHeight: exportFrame.height + EXPORT_FRAME_EXTRA_HEIGHT,
       scrollX: 0,
       scrollY: 0
     });
@@ -1171,8 +1260,8 @@ async function downloadImage() {
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } finally {
+    if (exportFrame?.frame) exportFrame.frame.remove();
     hiddenExportBullets.forEach(item => item.classList.remove("is-export-hidden"));
-    document.body.classList.remove("is-exporting");
     exportButton.disabled = false;
     exportButton.textContent = previousLabel;
   }
