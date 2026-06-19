@@ -1,14 +1,81 @@
 const grid = document.getElementById("proposalGrid");
 const cardTemplate = document.getElementById("cardTemplate");
+const appShell = document.querySelector(".app-shell");
+const styleSelector = document.getElementById("styleSelector");
+const styleOptions = document.getElementById("styleOptions");
+const styleLoadButton = document.getElementById("styleLoadButton");
 const exportButton = document.getElementById("exportButton");
 const assetUploadInput = document.getElementById("assetUploadInput");
 const projectLoadInput = document.getElementById("projectLoadInput");
+const projectControls = document.querySelector(".project-controls");
+const changeStyleButton = document.getElementById("changeStyleButton");
+const newProjectButton = document.getElementById("newProjectButton");
 const saveProjectButton = document.getElementById("saveProjectButton");
 const loadProjectButton = document.getElementById("loadProjectButton");
+const newProjectDialog = document.getElementById("newProjectDialog");
+const newProjectSaveButton = document.getElementById("newProjectSaveButton");
+const newProjectDiscardButton = document.getElementById("newProjectDiscardButton");
 
 const STORAGE_KEY = "grl-proposal-builder-v1";
-const PROJECT_FILE_VERSION = 1;
+const PROJECT_FILE_VERSION = 2;
 const MAX_HISTORY = 80;
+const DEFAULT_STYLE_ID = "branded-blue";
+const STYLE_OPTIONS = [
+  {
+    id: "branded-blue",
+    label: "Branded Blue",
+    description: "Indigo blue with white proposal typography.",
+    exportBackground: "#3f6583",
+    swatches: ["#486e8d", "#ffffff", "#000000"],
+    cssVars: {
+      "--bg": "#3f6583",
+      "--bg-deep": "#355979",
+      "--line": "rgba(231, 238, 247, 0.55)",
+      "--line-soft": "rgba(231, 238, 247, 0.32)",
+      "--text": "#eef4fb",
+      "--text-soft": "rgba(238, 244, 251, 0.76)",
+      "--text-muted": "rgba(238, 244, 251, 0.58)",
+      "--panel": "rgba(255, 255, 255, 0.035)",
+      "--control": "rgba(255, 255, 255, 0.12)",
+      "--control-hover": "rgba(255, 255, 255, 0.22)",
+      "--danger": "rgba(255, 255, 255, 0.2)",
+      "--focus-bg": "rgba(255, 255, 255, 0.08)",
+      "--focus-ring": "rgba(255, 255, 255, 0.15)",
+      "--asset-button-bg": "rgba(63, 101, 131, 0.9)",
+      "--brand-asset-color": "#ffffff",
+      "--page-background": "radial-gradient(circle at 30% 12%, rgba(255,255,255,0.045), transparent 26rem), radial-gradient(circle at 78% 26%, rgba(255,255,255,0.035), transparent 30rem), linear-gradient(135deg, #3f6583, #355979)",
+      "--shadow": "rgba(0, 0, 0, 0.22)",
+      "--color-scheme": "dark"
+    }
+  },
+  {
+    id: "calligraphy-white",
+    label: "Calligraphy White",
+    description: "Paper white with black text and indigo accents.",
+    exportBackground: "#efeeea",
+    swatches: ["#efeeea", "#000000", "#486e8d"],
+    cssVars: {
+      "--bg": "#efeeea",
+      "--bg-deep": "#ffffff",
+      "--line": "rgba(0, 0, 0, 0.44)",
+      "--line-soft": "rgba(0, 0, 0, 0.18)",
+      "--text": "#000000",
+      "--text-soft": "rgba(0, 0, 0, 0.72)",
+      "--text-muted": "rgba(0, 0, 0, 0.52)",
+      "--panel": "rgba(255, 255, 255, 0.28)",
+      "--control": "rgba(72, 110, 141, 0.12)",
+      "--control-hover": "rgba(72, 110, 141, 0.22)",
+      "--danger": "rgba(0, 0, 0, 0.12)",
+      "--focus-bg": "rgba(72, 110, 141, 0.09)",
+      "--focus-ring": "rgba(72, 110, 141, 0.26)",
+      "--asset-button-bg": "rgba(239, 238, 234, 0.95)",
+      "--brand-asset-color": "#000000",
+      "--page-background": "#efeeea",
+      "--shadow": "rgba(72, 110, 141, 0.18)",
+      "--color-scheme": "light"
+    }
+  }
+];
 const LOCAL_BRAND_MARK_PATH = "assets/logos/WhiteGLogo.svg";
 const LOCAL_BRAND_LOGO_PATH = "assets/logos/WhiteLogoText.svg";
 const BULLET_PLACEHOLDER = "[ ADD ITEM ]";
@@ -22,6 +89,8 @@ const DEFAULT_BRAND_LOGO = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIi
 
 const DEFAULT_BRAND_LOGO_TOKEN = "default:brand-logo";
 
+let activeStyleId = DEFAULT_STYLE_ID;
+let projectLoadSource = "editor";
 let state = loadState();
 let history = [];
 let activeEditSnapshot = null;
@@ -86,6 +155,88 @@ function sampleState() {
     globals: defaultGlobals(),
     rows: [[essence, signature]]
   };
+}
+
+function baseProjectState() {
+  return normalizeState({ globals: defaultGlobals(), rows: [[makeBox()]] });
+}
+
+function styleById(styleId) {
+  return STYLE_OPTIONS.find(style => style.id === styleId) || STYLE_OPTIONS[0];
+}
+
+function normalizeStyleId(styleId) {
+  return styleById(styleId).id;
+}
+
+function activeStyle() {
+  return styleById(activeStyleId);
+}
+
+function applyStyle(styleId) {
+  const nextStyle = styleById(styleId);
+  activeStyleId = nextStyle.id;
+  document.body.dataset.styleId = nextStyle.id;
+
+  Object.entries(nextStyle.cssVars).forEach(([property, value]) => {
+    document.documentElement.style.setProperty(property, value);
+  });
+}
+
+function setEditorVisible(isVisible) {
+  if (styleSelector) styleSelector.hidden = isVisible;
+  if (appShell) appShell.hidden = !isVisible;
+  if (projectControls) projectControls.hidden = !isVisible;
+  if (exportButton) exportButton.hidden = !isVisible;
+
+  document.body.classList.toggle("is-style-selecting", !isVisible);
+  document.body.classList.toggle("is-editor-active", isVisible);
+}
+
+function renderStyleOptions() {
+  if (!styleOptions) return;
+  styleOptions.innerHTML = "";
+
+  STYLE_OPTIONS.forEach(style => {
+    const option = document.createElement("button");
+    option.className = "style-option";
+    option.type = "button";
+    option.dataset.styleId = style.id;
+    option.style.setProperty("--style-preview-bg", style.swatches[0]);
+    option.style.setProperty("--style-preview-text", style.swatches[1]);
+    option.style.setProperty("--style-preview-accent", style.swatches[2]);
+
+    const label = document.createElement("span");
+    label.className = "style-option-label";
+    label.textContent = style.label;
+
+    const description = document.createElement("span");
+    description.className = "style-option-description";
+    description.textContent = style.description;
+
+    const swatches = document.createElement("span");
+    swatches.className = "style-option-swatches";
+    style.swatches.forEach(color => {
+      const swatch = document.createElement("span");
+      swatch.className = "style-option-swatch";
+      swatch.style.background = color;
+      swatches.appendChild(swatch);
+    });
+
+    option.append(label, description, swatches);
+    styleOptions.appendChild(option);
+  });
+}
+
+function showStyleSelector() {
+  renderStyleOptions();
+  setEditorVisible(false);
+}
+
+function openEditorWithStyle(styleId) {
+  applyStyle(styleId);
+  render();
+  setEditorVisible(true);
 }
 
 function normalizedAssetPath(src) {
@@ -309,18 +460,27 @@ function createDefaultBrandLogo() {
 function renderAssetImage(field, src) {
   document.querySelectorAll(`[data-asset-image="${field}"]`).forEach(preview => {
     const button = preview.closest("[data-asset-target]");
+    const isDefaultAsset = (
+      (field === "brandMarkSrc" && src === DEFAULT_BRAND_MARK) ||
+      (field === "brandLogoSrc" && (!src || src === DEFAULT_BRAND_LOGO_TOKEN))
+    );
     preview.replaceChildren();
 
     if (field === "brandLogoSrc" && (!src || src === DEFAULT_BRAND_LOGO_TOKEN)) {
       preview.hidden = false;
       preview.appendChild(createDefaultBrandLogo());
-      if (button) button.classList.remove("has-custom-asset");
+      if (button) {
+        button.classList.add("has-default-asset");
+        button.classList.remove("has-custom-asset");
+      }
       return;
     }
 
     if (!src) {
       preview.hidden = true;
-      if (button) button.classList.remove("has-custom-asset");
+      if (button) {
+        button.classList.remove("has-custom-asset", "has-default-asset");
+      }
       return;
     }
 
@@ -328,7 +488,10 @@ function renderAssetImage(field, src) {
     if (inlineSvg) {
       preview.hidden = false;
       preview.appendChild(inlineSvg);
-      if (button) button.classList.add("has-custom-asset");
+      if (button) {
+        button.classList.toggle("has-custom-asset", !isDefaultAsset);
+        button.classList.toggle("has-default-asset", isDefaultAsset);
+      }
       return;
     }
 
@@ -338,7 +501,10 @@ function renderAssetImage(field, src) {
     image.decoding = "async";
     preview.hidden = false;
     preview.appendChild(image);
-    if (button) button.classList.add("has-custom-asset");
+    if (button) {
+      button.classList.toggle("has-custom-asset", !isDefaultAsset);
+      button.classList.toggle("has-default-asset", isDefaultAsset);
+    }
   });
 }
 
@@ -826,6 +992,7 @@ function downloadProjectFile() {
     app: "gabrielerizzilab-proposal-builder",
     version: PROJECT_FILE_VERSION,
     savedAt: new Date().toISOString(),
+    styleId: activeStyleId,
     state
   };
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
@@ -839,23 +1006,57 @@ function downloadProjectFile() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function readProjectState(payload) {
+function showNewProjectDialog() {
+  if (!newProjectDialog) return;
+  newProjectDialog.hidden = false;
+  newProjectSaveButton?.focus();
+}
+
+function hideNewProjectDialog() {
+  if (newProjectDialog) newProjectDialog.hidden = true;
+}
+
+function loadBaseTemplate() {
+  pushHistory();
+  state = baseProjectState();
+  persist();
+  render();
+}
+
+function saveAndLoadBaseTemplate() {
+  downloadProjectFile();
+  hideNewProjectDialog();
+  loadBaseTemplate();
+}
+
+function discardAndLoadBaseTemplate() {
+  hideNewProjectDialog();
+  loadBaseTemplate();
+}
+
+function readProjectData(payload) {
   const parsed = JSON.parse(payload);
   const projectState = parsed?.state && Array.isArray(parsed.state.rows) ? parsed.state : parsed;
   if (!projectState || !Array.isArray(projectState.rows)) {
     throw new Error("Invalid proposal project file.");
   }
-  return normalizeState(projectState);
+  return {
+    state: normalizeState(projectState),
+    styleId: normalizeStyleId(parsed?.styleId)
+  };
 }
 
-async function loadProjectFile(file) {
+async function loadProjectFile(file, source = projectLoadSource) {
   if (!file) return;
   const text = await readFileAsText(file);
-  const nextState = readProjectState(text);
+  const project = readProjectData(text);
+  const nextStyleId = source === "selector" ? project.styleId : activeStyleId;
   pushHistory();
-  state = nextState;
+  state = project.state;
+  applyStyle(nextStyleId);
   persist();
   render();
+  setEditorVisible(true);
 }
 
 async function canvasToBlob(canvas) {
@@ -899,7 +1100,7 @@ async function downloadImage() {
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     const canvas = await window.html2canvas(exportElement, {
-      backgroundColor: "#3f6583",
+      backgroundColor: activeStyle().exportBackground,
       scale: Math.max(3, Math.min(4, window.devicePixelRatio || 1)),
       useCORS: true,
       allowTaint: false,
@@ -1036,6 +1237,18 @@ document.addEventListener("click", event => {
   }
 });
 
+styleOptions?.addEventListener("click", event => {
+  const option = event.target.closest("[data-style-id]");
+  if (!option) return;
+  openEditorWithStyle(option.dataset.styleId);
+});
+
+styleLoadButton?.addEventListener("click", () => {
+  projectLoadSource = "selector";
+  projectLoadInput.value = "";
+  projectLoadInput.click();
+});
+
 grid.addEventListener("click", event => {
   const card = closestCardFromEvent(event);
   if (!card) return;
@@ -1076,13 +1289,20 @@ assetUploadInput.addEventListener("change", event => {
 
 saveProjectButton.addEventListener("click", downloadProjectFile);
 
+changeStyleButton.addEventListener("click", showStyleSelector);
+
+newProjectButton.addEventListener("click", showNewProjectDialog);
+newProjectSaveButton.addEventListener("click", saveAndLoadBaseTemplate);
+newProjectDiscardButton.addEventListener("click", discardAndLoadBaseTemplate);
+
 loadProjectButton.addEventListener("click", () => {
+  projectLoadSource = "editor";
   projectLoadInput.value = "";
   projectLoadInput.click();
 });
 
 projectLoadInput.addEventListener("change", event => {
-  loadProjectFile(event.target.files[0]).catch(error => {
+  loadProjectFile(event.target.files[0], projectLoadSource).catch(error => {
     console.error("Could not load project.", error);
     alert("That project file could not be loaded.");
   });
@@ -1109,6 +1329,11 @@ document.addEventListener("focusout", event => {
 });
 
 document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && newProjectDialog && !newProjectDialog.hidden) {
+    hideNewProjectDialog();
+    return;
+  }
+
   const isUndo = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z";
   if (!isUndo) return;
   event.preventDefault();
@@ -1124,4 +1349,5 @@ exportButton.addEventListener("click", () => {
   });
 });
 
-render();
+applyStyle(DEFAULT_STYLE_ID);
+showStyleSelector();

@@ -5,6 +5,7 @@ This is a plain HTML, CSS and JavaScript proposal builder. It has no build step 
 ## What it does
 
 - Editable proposal boxes.
+- First-page style selector with Branded Blue and Calligraphy White themes.
 - Add a box left, right, above or below the current box.
 - Delete a box with the top-right X.
 - Reorder boxes by dragging the top-left handle with a live card preview.
@@ -16,6 +17,7 @@ This is a plain HTML, CSS and JavaScript proposal builder. It has no build step 
 - Click the header logos to upload custom SVG, PNG, JPG, or WebP assets.
 - Undo with Ctrl+Z or Cmd+Z.
 - Auto-saves to browser local storage.
+- Saved project JSON files include the style they were saved with.
 - Download PNG saves a high-resolution image with the proposal's natural aspect ratio.
 
 ## Local testing

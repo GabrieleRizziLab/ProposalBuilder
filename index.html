@@ -8,7 +8,18 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-shell">
+  <section id="styleSelector" class="style-selector" aria-labelledby="styleSelectorTitle">
+    <div class="style-selector-inner">
+      <div class="style-selector-heading">
+        <p class="style-selector-kicker">Proposal style</p>
+        <h1 id="styleSelectorTitle">Choose a style</h1>
+      </div>
+      <div id="styleOptions" class="style-options" aria-label="Available proposal styles"></div>
+      <button id="styleLoadButton" class="style-load-button" type="button">Load saved JSON</button>
+    </div>
+  </section>
+
+  <div class="app-shell" hidden>
     <header class="page-header">
       <div class="brand-block">
         <button class="asset-button brand-mark-button" type="button" data-asset-target="brandMarkSrc" title="Change G logo" aria-label="Change G logo">
@@ -64,11 +75,23 @@
   <input id="assetUploadInput" type="file" accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp" hidden />
   <input id="projectLoadInput" type="file" accept=".json,.grl-proposal,application/json" hidden />
 
-  <div class="project-controls" aria-label="Project file controls">
+  <div class="project-controls" aria-label="Project file controls" hidden>
+    <button id="changeStyleButton" class="utility-button" type="button">Style</button>
+    <button id="newProjectButton" class="utility-button" type="button">New</button>
     <button id="saveProjectButton" class="utility-button" type="button">Save</button>
     <button id="loadProjectButton" class="utility-button" type="button">Load</button>
   </div>
-  <button id="exportButton" class="export-button" type="button">Download PNG</button>
+  <button id="exportButton" class="export-button" type="button" hidden>Download PNG</button>
+
+  <div id="newProjectDialog" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="newProjectDialogTitle" hidden>
+    <div class="modal-panel">
+      <h2 id="newProjectDialogTitle">Would you like to save?</h2>
+      <div class="modal-actions">
+        <button id="newProjectSaveButton" class="utility-button" type="button">Save</button>
+        <button id="newProjectDiscardButton" class="utility-button" type="button">Discard</button>
+      </div>
+    </div>
+  </div>
 
   <template id="cardTemplate">
     <article class="proposal-card" data-box-id="">
