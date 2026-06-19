@@ -864,6 +864,22 @@ async function canvasToBlob(canvas) {
   return blob;
 }
 
+function markEmptyExportBullets() {
+  const hiddenItems = [];
+
+  document.querySelectorAll(".bullet-text[data-placeholder]").forEach(text => {
+    if (text.textContent.trim()) return;
+
+    const item = text.closest(".bullet-item");
+    if (!item) return;
+
+    item.classList.add("is-export-hidden");
+    hiddenItems.push(item);
+  });
+
+  return hiddenItems;
+}
+
 async function downloadImage() {
   if (!window.html2canvas) {
     alert("The image export tool is still loading. Please try again in a moment.");
@@ -874,6 +890,7 @@ async function downloadImage() {
   exportButton.disabled = true;
   exportButton.textContent = "Preparing...";
   document.body.classList.add("is-exporting");
+  const hiddenExportBullets = markEmptyExportBullets();
 
   try {
     if (document.fonts?.ready) await document.fonts.ready;
@@ -902,6 +919,7 @@ async function downloadImage() {
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } finally {
+    hiddenExportBullets.forEach(item => item.classList.remove("is-export-hidden"));
     document.body.classList.remove("is-exporting");
     exportButton.disabled = false;
     exportButton.textContent = previousLabel;

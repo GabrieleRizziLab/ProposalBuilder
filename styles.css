@@ -171,8 +171,8 @@ button {
 }
 
 .brand-mark-button {
-  width: 76px;
-  height: 76px;
+  width: 96px;
+  height: 96px;
   flex: 0 0 auto;
 }
 
@@ -611,9 +611,9 @@ body.is-dragging-card {
 .bullet-item {
   position: relative;
   display: grid;
-  grid-template-columns: 14px 1fr;
+  grid-template-columns: 14px minmax(0, 1fr);
   gap: 6px;
-  align-items: start;
+  align-items: center;
   min-height: 21px;
   color: var(--text-soft);
   line-height: 1.3;
@@ -621,10 +621,13 @@ body.is-dragging-card {
 }
 
 .bullet-dot {
-  line-height: 1.35;
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding-top: 0.45em;
+  align-self: center;
+  width: 14px;
+  height: 1.3em;
+  line-height: 1;
   font-size: 0;
 }
 
@@ -634,11 +637,14 @@ body.is-dragging-card {
   height: 4px;
   border-radius: 50%;
   background: currentColor;
+  transform: none;
 }
 
 .bullet-text {
+  display: block;
   min-width: 0;
   min-height: 1.3em;
+  line-height: 1.3;
   word-break: break-word;
 }
 
@@ -749,6 +755,7 @@ body.is-dragging-card {
   margin: 0;
   color: var(--text-soft);
   line-height: 1.45;
+  font-size: 14px;
 }
 
 .footer-pillars {
@@ -839,6 +846,10 @@ body.is-exporting .remove-bullet {
   display: none !important;
 }
 
+body.is-exporting .bullet-item.is-export-hidden {
+  display: none;
+}
+
 body.is-exporting [contenteditable="true"]:hover,
 body.is-exporting [contenteditable="true"]:focus {
   background: transparent;
@@ -847,8 +858,8 @@ body.is-exporting [contenteditable="true"]:focus {
 
 @media (max-width: 900px) {
   .app-shell {
-    width: min(100% - 16px, 520px);
-    padding: 22px 4px 96px;
+    width: 100%;
+    padding: 22px 12px 96px;
   }
 
   .page-header,
@@ -882,68 +893,76 @@ body.is-exporting [contenteditable="true"]:focus {
   }
 
   .grid-row {
-    grid-template-columns: 1fr !important;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .proposal-grid {
-    max-width: 430px;
-    gap: 18px;
+    width: min(100%, 340px);
+    max-width: none;
+    gap: 16px;
   }
 
   .proposal-card {
+    width: 100%;
+    max-width: 340px;
     min-height: 0;
   }
 
   .card-inner {
-    padding: 22px 20px 16px;
-    gap: 12px;
+    padding: 18px 16px 14px;
+    gap: 10px;
   }
 
   .box-title {
-    font-size: 22px;
+    font-size: 19px;
+    letter-spacing: 0.26em;
   }
 
   .box-subtitle {
     min-height: 0;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.35;
   }
 
   .section {
-    grid-template-columns: 40px 1fr;
-    gap: 10px;
-    padding: 11px 0;
+    grid-template-columns: 34px 1fr;
+    gap: 9px;
+    padding: 9px 0;
   }
 
   .section-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
   }
 
   .section-label {
-    margin-bottom: 6px;
-    font-size: 10px;
+    margin-bottom: 5px;
+    font-size: 9.5px;
+    letter-spacing: 0.15em;
   }
 
   .bullet-item {
-    min-height: 18px;
-    font-size: 12px;
+    grid-template-columns: 12px minmax(0, 1fr);
+    min-height: 16px;
+    font-size: 11px;
   }
 
   .estimate-row {
-    min-height: 36px;
-    gap: 10px;
-    padding: 0 12px;
+    min-height: 32px;
+    gap: 8px;
+    padding: 0 10px;
   }
 
   .estimate-label {
-    font-size: 10px;
+    font-size: 9px;
+    letter-spacing: 0.15em;
   }
 
   .estimate-values {
     min-width: auto;
-    gap: 8px;
-    font-size: 13px;
+    gap: 6px;
+    font-size: 12px;
   }
 
   .price-note {
@@ -989,8 +1008,8 @@ body.is-exporting [contenteditable="true"]:focus {
 
 @media (max-width: 520px) {
   .app-shell {
-    width: calc(100% - 12px);
-    padding-top: 14px;
+    width: 100%;
+    padding: 14px 10px 96px;
   }
 
   .brand-block {
@@ -1020,33 +1039,98 @@ body.is-exporting [contenteditable="true"]:focus {
   }
 
   .proposal-grid {
-    max-width: 360px;
+    width: min(100%, 300px);
+    max-width: none;
   }
 
   .card-inner {
-    padding: 18px 16px 14px;
+    padding: 14px 13px 12px;
+    gap: 8px;
+  }
+
+  .title-row {
+    gap: 8px;
+  }
+
+  .box-title {
+    font-size: 16px;
+    letter-spacing: 0.22em;
+  }
+
+  .box-subtitle {
+    font-size: 11px;
+  }
+
+  .section {
+    grid-template-columns: 30px 1fr;
+    gap: 7px;
+    padding: 8px 0;
+  }
+
+  .section-icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .section-label {
+    margin-bottom: 4px;
+    font-size: 8.5px;
+  }
+
+  .bullet-list {
+    gap: 2px;
+  }
+
+  .bullet-item {
+    grid-template-columns: 10px minmax(0, 1fr);
+    gap: 4px;
+    min-height: 15px;
+    font-size: 10px;
+  }
+
+  .bullet-dot::before {
+    width: 3px;
+    height: 3px;
+  }
+
+  .estimate-row {
+    min-height: 30px;
+    padding: 0 8px;
+  }
+
+  .estimate-label {
+    font-size: 8px;
+  }
+
+  .estimate-values {
+    font-size: 11px;
+  }
+
+  .price-note {
+    font-size: 8px;
   }
 
   .side-add {
-    width: 34px;
-    height: 34px;
-    box-shadow: 0 0 0 5px var(--bg);
+    width: 28px;
+    height: 28px;
+    box-shadow: none;
+    background: rgba(63, 101, 131, 0.96);
   }
 
   .side-add-left {
-    left: -14px;
+    left: 4px;
   }
 
   .side-add-right {
-    right: -14px;
+    right: 4px;
   }
 
   .side-add-top {
-    top: -14px;
+    top: 4px;
   }
 
   .side-add-bottom {
-    bottom: -14px;
+    bottom: 4px;
   }
 
   .page-footer {
