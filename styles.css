@@ -94,6 +94,12 @@ button {
   box-shadow: 0 0 0 1px rgba(255,255,255,0.15);
 }
 
+[contenteditable="true"][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
 .app-shell {
   width: min(1600px, calc(100% - 32px));
   margin: 0 auto;
@@ -252,6 +258,32 @@ button {
 }
 
 .export-button:hover {
+  background: var(--control-hover);
+}
+
+.project-controls {
+  position: fixed;
+  left: 28px;
+  bottom: 28px;
+  z-index: 20;
+  display: flex;
+  gap: 10px;
+}
+
+.utility-button {
+  border: 1px solid var(--line);
+  background: var(--control);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 12px;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.22);
+}
+
+.utility-button:hover {
   background: var(--control-hover);
 }
 
@@ -579,7 +611,7 @@ body.is-dragging-card {
 .bullet-item {
   position: relative;
   display: grid;
-  grid-template-columns: 14px 1fr 24px;
+  grid-template-columns: 14px 1fr;
   gap: 6px;
   align-items: start;
   min-height: 21px;
@@ -610,12 +642,6 @@ body.is-dragging-card {
   word-break: break-word;
 }
 
-.bullet-text[data-placeholder]:empty::before {
-  content: attr(data-placeholder);
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
 .remove-bullet {
   width: 22px;
   height: 22px;
@@ -631,6 +657,11 @@ body.is-dragging-card {
   line-height: 1;
   padding: 0;
   font-size: 0;
+}
+
+.add-bullet,
+.remove-bullet {
+  display: none !important;
 }
 
 .remove-bullet::before {
@@ -799,6 +830,7 @@ body.is-exporting .app-shell {
 
 body.is-exporting .asset-button::after,
 body.is-exporting .export-button,
+body.is-exporting .project-controls,
 body.is-exporting .drag-handle,
 body.is-exporting .remove-card,
 body.is-exporting .side-add,
@@ -815,8 +847,8 @@ body.is-exporting [contenteditable="true"]:focus {
 
 @media (max-width: 900px) {
   .app-shell {
-    width: min(100% - 24px, 760px);
-    padding-top: 24px;
+    width: min(100% - 16px, 520px);
+    padding: 22px 4px 96px;
   }
 
   .page-header,
@@ -825,13 +857,19 @@ body.is-exporting [contenteditable="true"]:focus {
     flex-direction: column;
   }
 
+  .page-header {
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+
   .brand-mark-button {
-    width: 68px;
-    height: 68px;
+    width: 58px;
+    height: 58px;
   }
 
   .brand-logo-button {
-    width: min(350px, 84vw);
+    width: min(300px, 84vw);
+    height: 44px;
   }
 
   .document-title-block {
@@ -847,6 +885,71 @@ body.is-exporting [contenteditable="true"]:focus {
     grid-template-columns: 1fr !important;
   }
 
+  .proposal-grid {
+    max-width: 430px;
+    gap: 18px;
+  }
+
+  .proposal-card {
+    min-height: 0;
+  }
+
+  .card-inner {
+    padding: 22px 20px 16px;
+    gap: 12px;
+  }
+
+  .box-title {
+    font-size: 22px;
+  }
+
+  .box-subtitle {
+    min-height: 0;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .section {
+    grid-template-columns: 40px 1fr;
+    gap: 10px;
+    padding: 11px 0;
+  }
+
+  .section-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .section-label {
+    margin-bottom: 6px;
+    font-size: 10px;
+  }
+
+  .bullet-item {
+    min-height: 18px;
+    font-size: 12px;
+  }
+
+  .estimate-row {
+    min-height: 36px;
+    gap: 10px;
+    padding: 0 12px;
+  }
+
+  .estimate-label {
+    font-size: 10px;
+  }
+
+  .estimate-values {
+    min-width: auto;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .price-note {
+    font-size: 9px;
+  }
+
   .footer-pillars {
     grid-template-columns: 1fr;
   }
@@ -855,5 +958,108 @@ body.is-exporting [contenteditable="true"]:focus {
     border-left: none;
     border-top: 1px solid var(--line-soft);
     padding: 14px 0;
+  }
+
+  .template-note {
+    letter-spacing: 0.16em;
+    font-size: 10px;
+  }
+
+  .template-note small {
+    letter-spacing: 0.08em;
+  }
+
+  .project-controls {
+    left: 12px;
+    bottom: 12px;
+    gap: 8px;
+  }
+
+  .export-button {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .utility-button,
+  .export-button {
+    padding: 9px 12px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    width: calc(100% - 12px);
+    padding-top: 14px;
+  }
+
+  .brand-block {
+    gap: 8px;
+  }
+
+  .brand-logo-name {
+    font-size: 16px;
+    letter-spacing: 0.28em;
+  }
+
+  .brand-logo-tagline {
+    margin-top: 10px;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+  }
+
+  .document-title,
+  .brand-name {
+    font-size: 20px;
+    letter-spacing: 0.28em;
+  }
+
+  .document-subtitle {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+  }
+
+  .proposal-grid {
+    max-width: 360px;
+  }
+
+  .card-inner {
+    padding: 18px 16px 14px;
+  }
+
+  .side-add {
+    width: 34px;
+    height: 34px;
+    box-shadow: 0 0 0 5px var(--bg);
+  }
+
+  .side-add-left {
+    left: -14px;
+  }
+
+  .side-add-right {
+    right: -14px;
+  }
+
+  .side-add-top {
+    top: -14px;
+  }
+
+  .side-add-bottom {
+    bottom: -14px;
+  }
+
+  .page-footer {
+    gap: 24px;
+  }
+
+  .notes-block p,
+  .pillar {
+    font-size: 11px;
+  }
+
+  .mini-icon {
+    width: 38px;
+    height: 38px;
   }
 }

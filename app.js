@@ -2,11 +2,21 @@ const grid = document.getElementById("proposalGrid");
 const cardTemplate = document.getElementById("cardTemplate");
 const exportButton = document.getElementById("exportButton");
 const assetUploadInput = document.getElementById("assetUploadInput");
+const projectLoadInput = document.getElementById("projectLoadInput");
+const saveProjectButton = document.getElementById("saveProjectButton");
+const loadProjectButton = document.getElementById("loadProjectButton");
 
 const STORAGE_KEY = "grl-proposal-builder-v1";
+const PROJECT_FILE_VERSION = 1;
 const MAX_HISTORY = 80;
 const LOCAL_BRAND_MARK_PATH = "assets/logos/WhiteGLogo.svg";
 const LOCAL_BRAND_LOGO_PATH = "assets/logos/WhiteLogoText.svg";
+const BULLET_PLACEHOLDER = "[ ADD ITEM ]";
+const ESTIMATE_PLACEHOLDER = "[   ]";
+const DEFAULT_TEMPLATE_NOTE_TITLE = "MATTER OF DREAMS";
+const DEFAULT_TEMPLATE_NOTE_BODY = "We create immersive artistic experiences shaped around each vision, blending performance, atmosphere and detail into moments that feel cinematic, personal and unforgettable.";
+const LEGACY_TEMPLATE_NOTE_TITLE = "TEMPLATE - EASY TO EDIT";
+const LEGACY_TEMPLATE_NOTE_BODY = "Simply click on any text or field to customize the content, scope or estimation range.";
 const DEFAULT_BRAND_MARK = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMTYwIiByb2xlPSJpbWciPgo8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAtMSAwIDE2MCkiPgogIDxwYXRoIGQ9Ik0wIDAgTDEyLjk3NiAyNC4wNyBMMTUuOTYxIDI5LjYwNCBMMjQuNTQxIDQ1LjUyNCBMMzcuMTgyIDY4Ljk4MSBMMzguNjgxIDcxLjc2MSBMMzkuNzAzIDczLjY1NSBMNDAuNDYgNzUuMDU5IEw0My40MTggODAuNTU5IEw1Ni44MyAxMDUuNDMzIEw1Ny4xNTYgMTA2LjA0NyBMNzQuMzU3IDEzNy45NjgiIHRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIDEgNjIuMzUwMyAxMC4zNzY1KSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjAuNjgyIi8+CiAgPHBhdGggZD0iTTAgMCBDMy43MjcgLTMuODM3IDcuOTczIC02LjY1OCAxMi43MzcgLTguNDcxIEM3LjM1MyAtOC4wODkgMi4xMjYgLTYuOTU4IC0yLjc4NyAtNS4xNzIgWiIgdHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgMSA1Ni4wNzMgNDYuOTE0MykiIGZpbGw9IiNmZmYiIGZpbGwtcnVsZT0ibm9uemVybyIvPgogIDxwYXRoIGQ9Ik0wIDAgQy04LjI1MyAtMy4xNDIgLTE0LjkzOCAtOS4zMDIgLTIwLjA5IC0xOC40ODkgQy0yNC4xNzkgLTI1Ljc3NCAtMjYuNjUzIC0zNC4yMzggLTI3LjQ5OCAtNDMuODgxIEMtMjcuNzAzIC00Ni4xNSAtMjcuNjg2IC00OC42IC0yNy43MDYgLTUxLjAwNiBDLTI3LjY4NiAtNTMuNDEyIC0yNy42NDYgLTUzLjYxMSAtMjcuNzA2IC01OC4wMjYgTC0yNy40OTggLTkyLjQwMyBDLTQwLjkzNyAtODMuMzggLTQ5Ljk2IC02OC41ODUgLTQ5Ljc3NiAtNTAuODk0IEMtNTAuMDY5IC0yMi43MjggLTI3LjA1NiAtMS45MTUgMCAwIiB0cmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAxIDY4LjgxMDMgMTQwLjIyNDQpIiBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz4KICA8cGF0aCBkPSJNMCAwIEwxOC41NTcgMCBMMTAuOTUyIC0xNC4xMiBDMTAuNjM4IC0xMS4xNTYgOS45NjMgLTguNzQzIDguOTM1IC02Ljg4MyBDNy40NTYgLTQuMjExIDQuNDY0IC0xLjkyOCAwIDAiIHRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIDEgNzYuMjA0MSA4NC41ODM3KSIgZmlsbD0iI2ZmZiIgZmlsbC1ydWxlPSJub256ZXJvIi8+CiAgPHBhdGggZD0iTTAgMCBMLTM1LjE5MiAwIEwtMjYuNjEyIDE1LjkyIEwtMTMuOTcxIDM5LjM3NyBMLTEyLjQ3MSA0Mi4xNTcgTC0xMS40NDkgNDQuMDUxIEwtMTEuNDQ5IDIwLjI0IEMtMTEuNDQ5IDE0LjM4IC0xMC43MiAxMC4wMTEgLTkuMjI3IDcuMTU1IEMtNy43NjkgNC4zIC00LjY4OSAxLjkwOCAwIDAiIHRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIDEgMTIwLjczOTEgMzguNDM5OCkiIGZpbGw9IiNmZmYiIGZpbGwtcnVsZT0ibm9uemVybyIvPgogIDxwYXRoIGQ9Ik0wIDAgQzExLjcxNiA1LjE1NiAyOS45OSAtNS41NSAyMi44NjkgLTE4Ljk1MSBDMjEuNDYxIC0yMS42MDEgMTkuNDAzIC0yMy4zNDEgMTYuNzI1IC0yNC4xODMgQzE0LjAxOCAtMjUuMDExIDExLjI1NyAtMjQuNjc3IDguMzg2IC0yMy4xNTEgQzUuNzYzIC0yMS43NTcgMy45NSAtMTkuODM4IDIuOTIgLTE3LjM3OSBDMS44OSAtMTQuOTE5IDIuMTY2IC0xMi4yNjkgMy42OTEgLTkuMzk3IEM0LjUxMyAtNy44NTEgNS43ODggLTYuNjUyIDcuNTE2IC01Ljc5OSBDMTYuMjExIC0xLjY0OSAzLjkyMyAtMC41NTYgMCAwIiB0cmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAxIDgyLjUyNzggMTM5LjgzOTMpIiBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz4KICA8cGF0aCBkPSJNMCAwIEwtMC4xODQgLTAuMzY3IEMtMS4yODQgMCAtMi4zODQgMC4xODMgLTQuMjE4IDAuMTgzIEMtNi43ODYgMC4xODMgLTkuMzUzIC0xLjAwOSAtMTEuNTUzIC0zLjc1OSBMLTExLjU1MyAtNDcuOTU3IEwtMTEuOTIxIC00Ny45NTcgTC0xMS45MjEgMC4xODMgTC0xMS41NTMgMC4xODMgTC0xMS41NTMgLTMuMTE4IEMtOS4yNjEgLTAuNTUgLTYuOTY5IDAuNTUgLTQuMjE4IDAuNTUgQy0yLjM4NCAwLjU1IC0xLjI4NCAwLjM2NyAwIDAiIHRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIDEgNTkuMjQ2MSA5My4zOTQpIiBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz4KICA8cGF0aCBkPSJNMCAwIEwtMC4xODQgLTAuMzY3IEMtMS4yODQgMCAtMi4zODQgMC4xODMgLTQuMjE4IDAuMTgzIEMtNi43ODYgMC4xODMgLTkuMzUzIC0xLjAwOSAtMTEuNTUzIC0zLjc1OSBMLTExLjU1MyAtNDcuOTU3IEwtMTEuOTIxIC00Ny45NTcgTC0xMS45MjEgMC4xODMgTC0xMS41NTMgMC4xODMgTC0xMS41NTMgLTMuMTE4IEMtOS4yNjEgLTAuNTUgLTYuOTY5IDAuNTUgLTQuMjE4IDAuNTUgQy0yLjM4NCAwLjU1IC0xLjI4NCAwLjM2NyAwIDAiIHRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIDEgNTkuMjQ2MSA5My4zOTQpIiBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz4KPC9nPgo8L3N2Zz4K";
 const DEFAULT_BRAND_LOGO = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAyODUuMyAxNC4yIj4KICA8IS0tIEdlbmVyYXRvcjogQWRvYmUgSWxsdXN0cmF0b3IgMzAuNS4xLCBTVkcgRXhwb3J0IFBsdWctSW4gLiBTVkcgVmVyc2lvbjogMi4xLjQgQnVpbGQgMykgIC0tPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuc3QwIHsKICAgICAgICBsZXR0ZXItc3BhY2luZzogLjFlbTsKICAgICAgfQoKICAgICAgLnN0MSB7CiAgICAgICAgbGV0dGVyLXNwYWNpbmc6IC4xZW07CiAgICAgIH0KCiAgICAgIC5zdDIgewogICAgICAgIGxldHRlci1zcGFjaW5nOiAuMmVtOwogICAgICB9CgogICAgICAuc3QzLCAuc3Q0IHsKICAgICAgICBmaWxsOiAjZmZmOwogICAgICB9CgogICAgICAuc3Q1IHsKICAgICAgICBsZXR0ZXItc3BhY2luZzogLjJlbTsKICAgICAgfQoKICAgICAgLnN0NiB7CiAgICAgICAgbGV0dGVyLXNwYWNpbmc6IC4xZW07CiAgICAgIH0KCiAgICAgIC5zdDcgewogICAgICAgIGxldHRlci1zcGFjaW5nOiAwZW07CiAgICAgIH0KCiAgICAgIC5zdDggewogICAgICAgIGxldHRlci1zcGFjaW5nOiAuMmVtOwogICAgICB9CgogICAgICAuc3Q5IHsKICAgICAgICBsZXR0ZXItc3BhY2luZzogLjJlbTsKICAgICAgfQoKICAgICAgLnN0MTAgewogICAgICAgIGxldHRlci1zcGFjaW5nOiAuMmVtOwogICAgICB9CgogICAgICAuc3Q0IHsKICAgICAgICBmb250LWZhbWlseTogU2lnbmFsLUJvbGQsIFNpZ25hbDsKICAgICAgICBmb250LXNpemU6IDguMnB4OwogICAgICAgIGZvbnQtd2VpZ2h0OiA3MDA7CiAgICAgIH0KCiAgICAgIC5zdDExIHsKICAgICAgICBsZXR0ZXItc3BhY2luZzogLjFlbTsKICAgICAgfQoKICAgICAgLnN0MTIgewogICAgICAgIGxldHRlci1zcGFjaW5nOiAwZW07CiAgICAgIH0KICAgIDwvc3R5bGU+CiAgPC9kZWZzPgogIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik0xMi4zLDEyLjVjLS41LjQtMSwuNy0xLjUuOS0uNS4yLTEuMS40LTEuNy42cy0xLjIuMi0xLjcuMmMtMSwwLTItLjItMi45LS42LS45LS40LTEuNy0uOS0yLjMtMS42cy0xLjItMS40LTEuNi0yLjNjLS40LS45LS42LTEuOC0uNi0yLjdzLjItMS44LjYtMi43Yy40LS44LjktMS42LDEuNS0yLjIuNy0uNiwxLjQtMS4xLDIuMy0xLjVDNS4zLjIsNi4zLDAsNy40LDBzMi4zLjIsMy4yLjdjMSwuNSwxLjgsMS4xLDIuNSwydi4yYy4xLDAtMSwuOS0xLC45di0uMmMtLjctLjctMS40LTEuMy0yLjItMS43LS43LS40LTEuNi0uNi0yLjYtLjZzLTEuNi4yLTIuMy41Yy0uNy4zLTEuNC43LTEuOSwxLjItLjUuNS0xLDEuMS0xLjMsMS44LS4zLjctLjUsMS40LS41LDIuMnMuMiwxLjUuNSwyLjJjLjMuNy43LDEuMywxLjMsMS45LjUuNSwxLjIsMSwxLjksMS4zLjcuMywxLjUuNSwyLjMuNXMxLjktLjIsMi43LS41Yy44LS4zLDEuNS0uOSwyLTEuNnYtMS45aC01LjR2LTEuNGg2Ljl2My4zYzAsLjIsMCwuMy0uMS41LS4zLjUtLjcuOS0xLjEsMS4zIi8+CiAgPHBhdGggY2xhc3M9InN0MyIgZD0iTTIwLjYsMTMuOUwyNi42LjVjMC0uMS4yLS4zLjMtLjQuMS0uMS4zLS4yLjUtLjJzLjQsMCwuNS4xYy4xLDAsLjIuMi4zLjRsNS45LDEzLjRoLTEuNmwtMi40LTUuNGgtNS41bC0yLjQsNS40aC0xLjZaTTI5LjYsNy4zbC0yLjItNC45LTIuMiw0LjloNC40WiIvPgogIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik00MywxMy45Yy0uMiwwLS41LDAtLjYtLjItLjItLjItLjMtLjQtLjMtLjZWMS4xYzAtLjIsMC0uNC4yLS42LjItLjIuNC0uMi42LS4yaDUuOWMuNiwwLDEuMSwwLDEuNi4zLjUuMi45LjUsMS4zLjguNC4zLjYuNy44LDEuMi4yLjUuMy45LjMsMS41cy0uMSwxLjEtLjQsMS42Yy0uMi41LS42LjktMSwxLjMuNi4zLDEuMS44LDEuNSwxLjMuMy41LjUsMS4yLjUsMS45czAsMS0uMywxLjVjLS4yLjUtLjUuOS0uOCwxLjItLjQuMy0uOC42LTEuMy44LS41LjItMSwuMy0xLjYuM2gtNi41Wk00My42LDYuNGg1LjNjLjQsMCwuNywwLDEtLjIuMy0uMS42LS4zLjgtLjUuMi0uMi40LS41LjUtLjguMS0uMy4yLS42LjItLjlzMC0uNi0uMi0uOWMtLjEtLjMtLjMtLjUtLjUtLjctLjItLjItLjUtLjQtLjgtLjUtLjMtLjEtLjYtLjItMS0uMmgtNS4zdjQuN1pNNDkuNSwxMi41Yy40LDAsLjcsMCwxLS4yLjMtLjEuNi0uMy44LS41LjItLjIuNC0uNS41LS44LjEtLjMuMi0uNi4yLS45czAtLjYtLjItLjljLS4xLS4zLS4zLS41LS41LS43LS4yLS4yLS41LS40LS44LS41LS4zLS4xLS42LS4yLTEtLjJoLTUuOXY0LjhoNS45WiIvPgogIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik02OC45LDguOGgtNC41djUuMmgtMS41VjEuMWMwLS4yLDAtLjQuMi0uNi4yLS4yLjQtLjIuNi0uMmg1LjZjLjcsMCwxLjMuMSwxLjguNC42LjIsMSwuNiwxLjQsMSwuNC40LjcuOS45LDEuNHMuMywxLjEuMywxLjcsMCwxLS4zLDEuNGMtLjIuNC0uNC44LS43LDEuMi0uMy4zLS43LjYtMS4xLjktLjQuMi0uOS40LTEuNC41bDMuOSw1LjNoLTEuN2wtMy44LTUuMlpNNjQuNCw3LjRoNS4xYy40LDAsLjgsMCwxLjItLjIuNC0uMS43LS4zLDEtLjYuMy0uMi41LS41LjYtLjkuMi0uMy4yLS43LjItMS4xczAtLjgtLjItMS4xYy0uMi0uNC0uNC0uNy0uNi0uOXMtLjYtLjUtMS0uN2MtLjQtLjItLjgtLjItMS4yLS4yaC01LjF2NS43WiIvPgogIDxyZWN0IGNsYXNzPSJzdDMiIHg9IjgyLjUiIHk9Ii4zIiB3aWR0aD0iMS41IiBoZWlnaHQ9IjEzLjciLz4KICA8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTAzLjIsNy44aC05LjF2NC44aDkuNnYxLjRoLTEwLjJjLS4yLDAtLjUsMC0uNi0uMi0uMi0uMi0uMy0uNC0uMy0uNlYxLjFjMC0uMiwwLS40LjItLjYuMi0uMi40LS4yLjYtLjJoMTAuMnYxLjRoLTkuNnY0LjdoOS4xdjEuNFoiLz4KICA8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTEzLjksMTMuN2MtLjItLjItLjMtLjQtLjMtLjZWLjNoMS41djEyLjNoOS4zdjEuNGgtOS44Yy0uMiwwLS41LDAtLjYtLjIiLz4KICA8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTQzLjQsNy44aC05LjF2NC44aDkuNnYxLjRoLTEwLjJjLS4yLDAtLjUsMC0uNi0uMi0uMi0uMi0uMy0uNC0uMy0uNlYxLjFjMC0uMiwwLS40LjItLjYuMi0uMi40LS4yLjYtLjJoMTAuMnYxLjRoLTkuNnY0LjdoOS4xdjEuNFoiLz4KICA8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTU5LjMsOC44aC00LjV2NS4yaC0xLjVWMS4xYzAtLjIsMC0uNC4yLS42LjItLjIuNC0uMi42LS4yaDUuNmMuNywwLDEuMy4xLDEuOC40LjYuMiwxLC42LDEuNCwxLC40LjQuNy45LjksMS40cy4zLDEuMS4zLDEuNywwLDEtLjMsMS40Yy0uMi40LS40LjgtLjcsMS4yLS4zLjMtLjcuNi0xLjEuOS0uNC4yLS45LjQtMS40LjVsMy45LDUuM2gtMS43bC0zLjgtNS4yWk0xNTQuOSw3LjRoNS4xYy40LDAsLjgsMCwxLjItLjIuNC0uMS43LS4zLDEtLjYuMy0uMi41LS41LjYtLjkuMi0uMy4yLS43LjItMS4xczAtLjgtLjItMS4xYy0uMi0uNC0uNC0uNy0uNi0uOS0uMy0uMy0uNi0uNS0xLS43LS40LS4yLS44LS4yLTEuMi0uMmgtNS4xdjUuN1oiLz4KICA8cmVjdCBjbGFzcz0ic3QzIiB4PSIxNzMiIHk9Ii4zIiB3aWR0aD0iMS41IiBoZWlnaHQ9IjEzLjciLz4KICA8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTkyLjgsMS43aC05LjhWLjNoMTEuMWMuMiwwLC41LDAsLjYuMi4yLjIuMi40LjIuNnMwLC4yLDAsLjNjMCwwLDAsLjItLjIuM2wtOS44LDEwLjloOS45djEuNGgtMTEuMmMtLjMsMC0uNSwwLS42LS4zLS4yLS4yLS4yLS40LS4yLS42czAtLjQuMi0uNWw5LjgtMTAuOVoiLz4KICA8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMjEzLjMsMS43aC05LjhWLjNoMTEuMWMuMiwwLC41LDAsLjYuMi4yLjIuMi40LjIuNnMwLC4yLDAsLjNjMCwwLDAsLjItLjIuM2wtOS44LDEwLjloOS45djEuNGgtMTEuMmMtLjMsMC0uNSwwLS42LS4zLS4yLS4yLS4yLS40LS4yLS42czAtLjQuMi0uNWw5LjgtMTAuOVoiLz4KICA8cmVjdCBjbGFzcz0ic3QzIiB4PSIyMjQuNSIgeT0iLjMiIHdpZHRoPSIxLjUiIGhlaWdodD0iMTMuNyIvPgogIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik0yMzQuOSwxMy43Yy0uMi0uMi0uMy0uNC0uMy0uNlYuM2gxLjV2MTIuM2g5LjN2MS40aC05LjhjLS4yLDAtLjUsMC0uNi0uMiIvPgogIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik0yNTIuNCwxMy45bDYtMTMuNGMwLS4xLjItLjMuMy0uNC4xLS4xLjMtLjIuNS0uMnMuNCwwLC41LjFjLjEsMCwuMi4yLjMuNGw1LjksMTMuNGgtMS42bC0yLjQtNS40aC01LjVsLTIuNCw1LjRoLTEuNlpNMjYxLjQsNy4zbC0yLjItNC45LTIuMiw0LjloNC40WiIvPgogIDxwYXRoIGNsYXNzPSJzdDMiIGQ9Ik0yNzQuOCwxMy45Yy0uMiwwLS41LDAtLjYtLjItLjItLjItLjMtLjQtLjMtLjZWMS4xYzAtLjIsMC0uNC4yLS42LjItLjIuNC0uMi42LS4yaDUuOWMuNiwwLDEuMSwwLDEuNi4zLjUuMi45LjUsMS4zLjguNC4zLjYuNy44LDEuMi4yLjUuMy45LjMsMS41cy0uMSwxLjEtLjQsMS42Yy0uMi41LS42LjktMSwxLjMuNi4zLDEuMS44LDEuNSwxLjMuMy41LjUsMS4yLjUsMS45czAsMS0uMywxLjVjLS4yLjUtLjUuOS0uOCwxLjItLjQuMy0uOC42LTEuMy44LS41LjItMSwuMy0xLjYuM2gtNi41Wk0yNzUuNCw2LjRoNS4zYy40LDAsLjcsMCwxLS4yLjMtLjEuNi0uMy44LS41LjItLjIuNC0uNS41LS44LjEtLjMuMi0uNi4yLS45czAtLjYtLjItLjljLS4xLS4zLS4zLS41LS41LS43LS4yLS4yLS41LS40LS44LS41LS4zLS4xLS42LS4yLTEtLjJoLTUuM3Y0LjdaTTI4MS4zLDEyLjVjLjQsMCwuNywwLDEtLjIuMy0uMS42LS4zLjgtLjUuMi0uMi40LS41LjUtLjguMS0uMy4yLS42LjItLjlzMC0uNi0uMi0uOWMtLjEtLjMtLjMtLjUtLjUtLjdzLS41LS40LS44LS41Yy0uMy0uMS0uNi0uMi0xLS4yaC01Ljl2NC44aDUuOVoiLz4KPC9zdmc+Cg==";
 
@@ -34,8 +44,8 @@ function defaultGlobals() {
     pillar2: "TAILORED FOR YOUR VISION",
     pillar3: "IMMERSIVE EXPERIENCE",
     pillar4: "EXTRAORDINARY EXECUTION",
-    templateNoteTitle: "TEMPLATE - EASY TO EDIT",
-    templateNoteBody: "Simply click on any text or field to customize the content, scope or estimation range."
+    templateNoteTitle: DEFAULT_TEMPLATE_NOTE_TITLE,
+    templateNoteBody: DEFAULT_TEMPLATE_NOTE_BODY
   };
 }
 
@@ -44,7 +54,7 @@ function makeSection(label, icon, items = []) {
     id: uid(),
     label,
     icon,
-    items: items.length ? items : ["[ Add item ]"]
+    items: items.length ? items : [""]
   };
 }
 
@@ -54,13 +64,13 @@ function makeBox(title = "ESSENCE") {
     title,
     subtitle: "For focused projects\nwith core artistic impact",
     estimateLabel: "ESTIMATION RANGE",
-    estimateMin: "[   ]",
-    estimateMax: "[   ]",
+    estimateMin: "",
+    estimateMax: "",
     priceNote: "All prices are indicative and may vary based on project scope and requirements.",
     sections: [
-      makeSection("CONTENT INCLUDED", "target", ["[ Add artistic content ]", "[ Add performance acts ]"]),
-      makeSection("CAST", "star", ["[ Add number of performers ]", "[ Add musician(s) ]"]),
-      makeSection("STAFF", "person", ["[ Add role or position ]", "[ Add role or position ]", "[ Add role or position ]"])
+      makeSection("CONTENT INCLUDED", "target"),
+      makeSection("CAST", "star"),
+      makeSection("STAFF", "person")
     ]
   };
 }
@@ -69,8 +79,8 @@ function sampleState() {
   const essence = makeBox("ESSENCE");
   const signature = makeBox("SIGNATURE");
   signature.subtitle = "For refined, immersive experiences\nwith curated artistic depth";
-  signature.sections[0].items = ["[ Add artistic content ]", "[ Add performance acts ]", "[ Add live music set ]"];
-  signature.sections[2].items = ["[ Add role or position ]", "[ Add role or position ]", "[ Add role or position ]", "[ Add role or position ]"];
+  signature.sections[0].items = ["Live music set", ""];
+  signature.sections[2].items = ["Creative direction", "Stage coordination", ""];
 
   return {
     globals: defaultGlobals(),
@@ -125,6 +135,14 @@ function normalizeState(nextState) {
     ...(normalized.globals || {})
   };
 
+  if (normalized.globals.templateNoteTitle === LEGACY_TEMPLATE_NOTE_TITLE) {
+    normalized.globals.templateNoteTitle = DEFAULT_TEMPLATE_NOTE_TITLE;
+  }
+
+  if (normalized.globals.templateNoteBody === LEGACY_TEMPLATE_NOTE_BODY) {
+    normalized.globals.templateNoteBody = DEFAULT_TEMPLATE_NOTE_BODY;
+  }
+
   if (isLegacyBrandMarkSrc(normalized.globals.brandMarkSrc)) {
     normalized.globals.brandMarkSrc = DEFAULT_BRAND_MARK;
   }
@@ -144,10 +162,16 @@ function normalizeState(nextState) {
 
   normalized.rows.forEach(row => {
     row.forEach(box => {
+      box.title = box.title || "ESSENCE";
+      box.subtitle = box.subtitle || "";
+      box.estimateLabel = box.estimateLabel || "ESTIMATION RANGE";
+      box.estimateMin = normalizeEstimateValue(box.estimateMin);
+      box.estimateMax = normalizeEstimateValue(box.estimateMax);
+      box.priceNote = box.priceNote || "";
       box.sections = Array.isArray(box.sections) ? box.sections : [];
       box.sections.forEach(section => {
         section.icon = section.icon || "circle";
-        section.items = Array.isArray(section.items) && section.items.length ? section.items : ["[ Add item ]"];
+        section.items = compactBulletItems(section.items);
       });
     });
   });
@@ -416,6 +440,62 @@ function isTemplatePlaceholder(value) {
   return /^\[\s*add\b.*\]$/i.test(String(value || "").trim());
 }
 
+function isBlankBulletValue(value) {
+  const text = String(value || "").trim();
+  return !text || isTemplatePlaceholder(text);
+}
+
+function compactBulletItems(items) {
+  const filledItems = (Array.isArray(items) ? items : [])
+    .map(item => String(item || "").trim())
+    .filter(item => !isBlankBulletValue(item));
+
+  return [...filledItems, ""];
+}
+
+function compactSectionBullets(section) {
+  const nextItems = compactBulletItems(section.items);
+  const changed = JSON.stringify(section.items) !== JSON.stringify(nextItems);
+  section.items = nextItems;
+  return changed;
+}
+
+function normalizeEstimateValue(value) {
+  const text = String(value || "").trim();
+  return /^\[\s*\]$/.test(text) ? "" : text;
+}
+
+function setEditableText(element, value, placeholder = "") {
+  const text = String(value || "");
+
+  if (placeholder && !text.trim()) {
+    element.dataset.placeholder = placeholder;
+    element.textContent = "";
+    return;
+  }
+
+  delete element.dataset.placeholder;
+  element.textContent = text;
+}
+
+function createBulletItemElement(item, itemIndex) {
+  const li = document.createElement("li");
+  li.className = "bullet-item";
+  li.dataset.itemIndex = String(itemIndex);
+
+  const dot = document.createElement("span");
+  dot.className = "bullet-dot";
+
+  const text = document.createElement("span");
+  text.className = "bullet-text";
+  text.contentEditable = "true";
+  text.dataset.field = "bullet";
+  setEditableText(text, isBlankBulletValue(item) ? "" : item, BULLET_PLACEHOLDER);
+
+  li.append(dot, text);
+  return li;
+}
+
 function createSectionElement(box, section) {
   const sectionEl = document.createElement("section");
   sectionEl.className = "section";
@@ -453,8 +533,8 @@ function createSectionElement(box, section) {
     text.contentEditable = "true";
     text.dataset.field = "bullet";
 
-    if (isTemplatePlaceholder(item)) {
-      text.dataset.placeholder = item;
+    if (isBlankBulletValue(item)) {
+      text.dataset.placeholder = isTemplatePlaceholder(item) ? item : BULLET_PLACEHOLDER;
       text.textContent = "";
     } else {
       text.textContent = item;
@@ -502,8 +582,8 @@ function render() {
       card.querySelector('[data-field="title"]').textContent = box.title;
       card.querySelector('[data-field="subtitle"]').textContent = box.subtitle;
       card.querySelector('[data-field="estimateLabel"]').textContent = box.estimateLabel;
-      card.querySelector('[data-field="estimateMin"]').textContent = box.estimateMin;
-      card.querySelector('[data-field="estimateMax"]').textContent = box.estimateMax;
+      setEditableText(card.querySelector('[data-field="estimateMin"]'), box.estimateMin, ESTIMATE_PLACEHOLDER);
+      setEditableText(card.querySelector('[data-field="estimateMax"]'), box.estimateMax, ESTIMATE_PLACEHOLDER);
       card.querySelector('[data-field="priceNote"]').textContent = box.priceNote;
 
       const sectionsEl = card.querySelector(".sections");
@@ -531,7 +611,8 @@ function updateField(target) {
 
   const field = target.dataset.field;
   if (["title", "subtitle", "estimateLabel", "estimateMin", "estimateMax", "priceNote"].includes(field)) {
-    found.box[field] = target.textContent.trim();
+    const value = target.textContent.trim();
+    found.box[field] = ["estimateMin", "estimateMax"].includes(field) ? normalizeEstimateValue(value) : value;
     persist();
     return;
   }
@@ -548,10 +629,51 @@ function updateField(target) {
   if (field === "bullet") {
     const bulletItem = target.closest(".bullet-item");
     const index = Number(bulletItem.dataset.itemIndex);
-    section.items[index] = target.textContent.trim() || target.dataset.placeholder || "[ Add item ]";
+    const value = target.textContent.trim();
+    section.items[index] = value;
+
+    if (value && index === section.items.length - 1) {
+      section.items.push("");
+      persist();
+      return { action: "appendBullet", itemIndex: section.items.length - 1 };
+    }
   }
 
   persist();
+}
+
+function appendBlankBulletElement(target, itemIndex) {
+  const list = target.closest(".bullet-list");
+  if (!list || list.querySelector(`.bullet-item[data-item-index="${itemIndex}"]`)) return;
+  list.appendChild(createBulletItemElement("", itemIndex));
+}
+
+function compactBulletsForTarget(target) {
+  if (target.dataset.field !== "bullet") return false;
+
+  const card = target.closest(".proposal-card");
+  if (!card) return false;
+  const found = findBox(card.dataset.boxId);
+  if (!found) return false;
+
+  const sectionEl = target.closest(".section");
+  if (!sectionEl) return false;
+  const section = found.box.sections.find(item => item.id === sectionEl.dataset.sectionId);
+  if (!section) return false;
+
+  return compactSectionBullets(section);
+}
+
+function restoreEmptyPlaceholder(target) {
+  if (target.textContent.trim()) return;
+
+  if (target.dataset.field === "bullet") {
+    setEditableText(target, "", target.dataset.placeholder || BULLET_PLACEHOLDER);
+  }
+
+  if (["estimateMin", "estimateMax"].includes(target.dataset.field)) {
+    setEditableText(target, "", ESTIMATE_PLACEHOLDER);
+  }
 }
 
 function addBoxNear(boxId, side) {
@@ -589,7 +711,7 @@ function addBullet(boxId, sectionId) {
   const section = found.box.sections.find(item => item.id === sectionId);
   if (!section) return;
   pushHistory();
-  section.items.push("[ Add item ]");
+  section.items.push("");
   persist();
   render();
 }
@@ -601,7 +723,7 @@ function removeBullet(boxId, sectionId, itemIndex) {
   if (!section) return;
   pushHistory();
   section.items.splice(itemIndex, 1);
-  if (!section.items.length) section.items.push("[ Add item ]");
+  if (!section.items.length) section.items.push("");
   persist();
   render();
 }
@@ -612,6 +734,15 @@ function readFileAsDataUrl(file) {
     reader.addEventListener("load", () => resolve(reader.result));
     reader.addEventListener("error", () => reject(reader.error));
     reader.readAsDataURL(file);
+  });
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsText(file);
   });
 }
 
@@ -680,6 +811,51 @@ function exportFileName() {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
   return `${title || "proposal"}-${new Date().toISOString().slice(0, 10)}.png`;
+}
+
+function projectFileName() {
+  const title = (state.globals.documentTitle || "proposal")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `${title || "proposal"}-${new Date().toISOString().slice(0, 10)}.grl-proposal.json`;
+}
+
+function downloadProjectFile() {
+  const project = {
+    app: "gabrielerizzilab-proposal-builder",
+    version: PROJECT_FILE_VERSION,
+    savedAt: new Date().toISOString(),
+    state
+  };
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = projectFileName();
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function readProjectState(payload) {
+  const parsed = JSON.parse(payload);
+  const projectState = parsed?.state && Array.isArray(parsed.state.rows) ? parsed.state : parsed;
+  if (!projectState || !Array.isArray(projectState.rows)) {
+    throw new Error("Invalid proposal project file.");
+  }
+  return normalizeState(projectState);
+}
+
+async function loadProjectFile(file) {
+  if (!file) return;
+  const text = await readFileAsText(file);
+  const nextState = readProjectState(text);
+  pushHistory();
+  state = nextState;
+  persist();
+  render();
 }
 
 async function canvasToBlob(canvas) {
@@ -880,8 +1056,24 @@ assetUploadInput.addEventListener("change", event => {
   });
 });
 
+saveProjectButton.addEventListener("click", downloadProjectFile);
+
+loadProjectButton.addEventListener("click", () => {
+  projectLoadInput.value = "";
+  projectLoadInput.click();
+});
+
+projectLoadInput.addEventListener("change", event => {
+  loadProjectFile(event.target.files[0]).catch(error => {
+    console.error("Could not load project.", error);
+    alert("That project file could not be loaded.");
+  });
+});
+
 document.addEventListener("input", event => {
-  if (event.target.matches('[contenteditable="true"]')) updateField(event.target);
+  if (!event.target.matches('[contenteditable="true"]')) return;
+  const result = updateField(event.target);
+  if (result?.action === "appendBullet") appendBlankBulletElement(event.target, result.itemIndex);
 });
 
 document.addEventListener("focusin", event => {
@@ -890,8 +1082,12 @@ document.addEventListener("focusin", event => {
 
 document.addEventListener("focusout", event => {
   if (!event.target.matches('[contenteditable="true"]')) return;
+  const shouldRender = compactBulletsForTarget(event.target);
+  restoreEmptyPlaceholder(event.target);
+  if (shouldRender) persist();
   pushHistoryFrom(activeEditSnapshot);
   activeEditSnapshot = null;
+  if (shouldRender) render();
 });
 
 document.addEventListener("keydown", event => {

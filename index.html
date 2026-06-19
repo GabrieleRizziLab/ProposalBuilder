@@ -54,14 +54,19 @@
       </section>
 
       <div class="template-note">
-        <span contenteditable="true" data-global-field="templateNoteTitle">TEMPLATE - EASY TO EDIT</span>
-        <small contenteditable="true" data-global-field="templateNoteBody">Simply click on any text or field to customize the content, scope or estimation range.</small>
+        <span contenteditable="true" data-global-field="templateNoteTitle">MATTER OF DREAMS</span>
+        <small contenteditable="true" data-global-field="templateNoteBody">Gabrielerizzilab creates immersive artistic experiences shaped around each vision, blending performance, atmosphere and detail into moments that feel cinematic, personal and unforgettable.</small>
       </div>
     </footer>
   </div>
 
   <input id="assetUploadInput" type="file" accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp" hidden />
+  <input id="projectLoadInput" type="file" accept=".json,.grl-proposal,application/json" hidden />
 
+  <div class="project-controls" aria-label="Project file controls">
+    <button id="saveProjectButton" class="utility-button" type="button">Save</button>
+    <button id="loadProjectButton" class="utility-button" type="button">Load</button>
+  </div>
   <button id="exportButton" class="export-button" type="button">Download PNG</button>
 
   <template id="cardTemplate">
