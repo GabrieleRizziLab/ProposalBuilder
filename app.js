@@ -148,8 +148,6 @@ function sampleState() {
   const essence = makeBox("Essence");
   const signature = makeBox("Signature");
   signature.subtitle = "For refined, immersive experiences\nwith curated artistic depth";
-  signature.sections[0].items = ["Live music set", ""];
-  signature.sections[2].items = ["Creative direction", "Stage coordination", ""];
 
   return {
     globals: defaultGlobals(),
