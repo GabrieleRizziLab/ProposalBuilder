@@ -15,6 +15,7 @@ const loadProjectButton = document.getElementById("loadProjectButton");
 const newProjectDialog = document.getElementById("newProjectDialog");
 const newProjectSaveButton = document.getElementById("newProjectSaveButton");
 const newProjectDiscardButton = document.getElementById("newProjectDiscardButton");
+const newProjectCancelButton = document.getElementById("newProjectCancelButton");
 
 const STORAGE_KEY = "grl-proposal-builder-v1";
 const PROJECT_FILE_VERSION = 2;
@@ -955,29 +956,30 @@ function findBoxInRows(rows, boxId) {
   return null;
 }
 
-function swapBoxesInRows(rows, firstBoxId, secondBoxId) {
+function swappedRowsFromOriginal(rows, firstBoxId, secondBoxId) {
   if (!firstBoxId || !secondBoxId || firstBoxId === secondBoxId) return false;
 
-  const first = findBoxInRows(rows, firstBoxId);
-  const second = findBoxInRows(rows, secondBoxId);
+  const nextRows = cloneRows(rows);
+  const first = findBoxInRows(nextRows, firstBoxId);
+  const second = findBoxInRows(nextRows, secondBoxId);
   if (!first || !second) return false;
 
-  const firstBox = rows[first.rowIndex][first.colIndex];
-  rows[first.rowIndex][first.colIndex] = rows[second.rowIndex][second.colIndex];
-  rows[second.rowIndex][second.colIndex] = firstBox;
-  return true;
+  const firstBox = nextRows[first.rowIndex][first.colIndex];
+  nextRows[first.rowIndex][first.colIndex] = nextRows[second.rowIndex][second.colIndex];
+  nextRows[second.rowIndex][second.colIndex] = firstBox;
+  return nextRows;
 }
 
 function captureCardRects() {
   const rects = new Map();
-  document.querySelectorAll(".proposal-card").forEach(card => {
+  document.querySelectorAll(".proposal-card:not(.drag-ghost)").forEach(card => {
     rects.set(card.dataset.boxId, card.getBoundingClientRect());
   });
   return rects;
 }
 
 function animateCardsFrom(previousRects) {
-  document.querySelectorAll(".proposal-card").forEach(card => {
+  document.querySelectorAll(".proposal-card:not(.drag-ghost)").forEach(card => {
     const previous = previousRects.get(card.dataset.boxId);
     if (!previous) return;
 
@@ -998,8 +1000,9 @@ function animateCardsFrom(previousRects) {
 function markDragPreview() {
   if (!dragState) return;
 
-  document.querySelectorAll(".proposal-card").forEach(card => {
+  document.querySelectorAll(".proposal-card:not(.drag-ghost)").forEach(card => {
     card.classList.toggle("drag-source", card.dataset.boxId === dragState.boxId);
+    card.classList.toggle("drag-over", card.dataset.boxId === dragState.targetBoxId);
   });
 }
 
@@ -1266,7 +1269,7 @@ async function downloadImage() {
 }
 
 function clearDragOver() {
-  document.querySelectorAll(".drag-over").forEach(card => card.classList.remove("drag-over"));
+  document.querySelectorAll(".proposal-card:not(.drag-ghost).drag-over").forEach(card => card.classList.remove("drag-over"));
 }
 
 function updateDragGhost(event) {
@@ -1276,9 +1279,38 @@ function updateDragGhost(event) {
   dragState.ghost.style.top = `${event.clientY - dragState.offsetY}px`;
 }
 
-function targetCardAtPoint(event) {
-  const element = document.elementFromPoint(event.clientX, event.clientY);
-  return element?.closest(".proposal-card") || null;
+function intersectionArea(firstRect, secondRect) {
+  const width = Math.min(firstRect.right, secondRect.right) - Math.max(firstRect.left, secondRect.left);
+  const height = Math.min(firstRect.bottom, secondRect.bottom) - Math.max(firstRect.top, secondRect.top);
+
+  return width > 0 && height > 0 ? width * height : 0;
+}
+
+function targetBoxIdForDrag() {
+  if (!dragState) return null;
+
+  const ghostRect = dragState.ghost.getBoundingClientRect();
+  const previousIntersectingBoxIds = dragState.intersectingBoxIds || new Set();
+  const intersections = [];
+
+  dragState.targetRects.forEach((rect, boxId) => {
+    if (boxId === dragState.boxId) return;
+
+    const area = intersectionArea(ghostRect, rect);
+    if (area > 0) intersections.push({ boxId, area });
+  });
+
+  intersections.sort((first, second) => second.area - first.area);
+  dragState.intersectingBoxIds = new Set(intersections.map(item => item.boxId));
+
+  const newlyIntersecting = intersections.find(item => !previousIntersectingBoxIds.has(item.boxId));
+  if (newlyIntersecting) return newlyIntersecting.boxId;
+
+  if (intersections.some(item => item.boxId === dragState.targetBoxId)) {
+    return dragState.targetBoxId;
+  }
+
+  return intersections[0]?.boxId || null;
 }
 
 function cleanupDrag() {
@@ -1300,27 +1332,27 @@ function handlePointerDrag(event) {
   event.preventDefault();
   updateDragGhost(event);
 
-  const card = targetCardAtPoint(event);
+  const nextTargetBoxId = targetBoxIdForDrag();
+  if (nextTargetBoxId === dragState.targetBoxId) return;
 
-  if (card && card.dataset.boxId !== dragState.boxId) {
-    const previousRects = captureCardRects();
-    const didSwap = swapBoxesInRows(dragState.previewRows, dragState.boxId, card.dataset.boxId);
+  const previousRects = captureCardRects();
+  const nextPreviewRows = nextTargetBoxId
+    ? swappedRowsFromOriginal(dragState.originalRows, dragState.boxId, nextTargetBoxId)
+    : cloneRows(dragState.originalRows);
 
-    if (didSwap) {
-      dragState.hasMoved = true;
-      renderDragPreview(previousRects);
-    }
-  }
+  dragState.targetBoxId = nextTargetBoxId;
+  dragState.previewRows = nextPreviewRows || cloneRows(dragState.originalRows);
+  renderDragPreview(previousRects);
 }
 
 function finishPointerDrag(event) {
   if (!dragState) return;
 
   event.preventDefault();
-  const { hasMoved, originalSnapshot, previewRows } = dragState;
+  const { originalSnapshot, previewRows, targetBoxId } = dragState;
   cleanupDrag();
 
-  if (!hasMoved) return;
+  if (!targetBoxId) return;
 
   state.rows = previewRows;
   sanitizeRows();
@@ -1343,6 +1375,7 @@ function startPointerDrag(event) {
 
   event.preventDefault();
 
+  const targetRects = captureCardRects();
   const rect = sourceCard.getBoundingClientRect();
   const ghost = sourceCard.cloneNode(true);
   ghost.classList.add("drag-ghost");
@@ -1360,8 +1393,11 @@ function startPointerDrag(event) {
     offsetX: event.clientX - rect.left,
     offsetY: event.clientY - rect.top,
     originalSnapshot: snapshot(),
+    originalRows: cloneRows(state.rows),
     previewRows: cloneRows(state.rows),
-    hasMoved: false
+    intersectingBoxIds: new Set(),
+    targetRects,
+    targetBoxId: null
   };
 
   sourceCard.classList.add("drag-source");
@@ -1442,6 +1478,7 @@ changeStyleButton.addEventListener("click", showStyleSelector);
 newProjectButton.addEventListener("click", showNewProjectDialog);
 newProjectSaveButton.addEventListener("click", saveAndLoadBaseTemplate);
 newProjectDiscardButton.addEventListener("click", discardAndLoadBaseTemplate);
+newProjectCancelButton.addEventListener("click", hideNewProjectDialog);
 
 loadProjectButton.addEventListener("click", () => {
   projectLoadSource = "editor";

@@ -454,7 +454,7 @@ button {
 
 .modal-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
@@ -473,6 +473,10 @@ button {
 }
 
 .proposal-card {
+  --card-control-offset: -16px;
+  --card-control-size: 33px;
+  --corner-control-size: 25px;
+  --corner-control-offset: -12px;
   position: relative;
   min-width: 0;
   border: 1px solid var(--line);
@@ -497,28 +501,32 @@ button {
 .drag-handle,
 .remove-card {
   position: absolute;
-  top: 10px;
+  top: var(--corner-control-offset);
   z-index: 4;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--line-soft);
+  width: var(--corner-control-size);
+  height: var(--corner-control-size);
+  border: 0;
   border-radius: 50%;
-  background: rgba(255,255,255,0.06);
+  background: var(--bg);
   cursor: grab;
   display: grid;
   place-items: center;
   padding: 0;
   opacity: 0;
   font-size: 0;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   transition: opacity 0.15s ease, background 0.15s ease;
 }
 
 .drag-handle {
-  left: 10px;
+  left: var(--corner-control-offset);
 }
 
 .remove-card {
-  right: 10px;
+  right: var(--corner-control-offset);
   cursor: pointer;
 }
 
@@ -527,10 +535,10 @@ button {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 13px;
+  width: 10px;
   height: 1px;
   background: currentColor;
-  box-shadow: 0 -4px 0 currentColor, 0 4px 0 currentColor;
+  box-shadow: 0 -3px 0 currentColor, 0 3px 0 currentColor;
   transform: translate(-50%, -50%);
 }
 
@@ -540,7 +548,7 @@ button {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 11px;
+  width: 8px;
   height: 1px;
   background: currentColor;
   transform: translate(-50%, -50%) rotate(45deg);
@@ -557,7 +565,7 @@ button {
 
 .drag-handle:hover,
 .remove-card:hover {
-  background: var(--control-hover);
+  background: var(--bg-deep);
 }
 
 .drag-handle:active {
@@ -572,6 +580,7 @@ button {
   position: fixed;
   z-index: 1000;
   pointer-events: none;
+  touch-action: none;
   opacity: 0.92;
   transform: rotate(-1deg);
   box-shadow: 0 24px 64px rgba(0,0,0,0.32);
@@ -579,14 +588,16 @@ button {
 
 body.is-dragging-card {
   cursor: grabbing;
+  touch-action: none;
   user-select: none;
+  overscroll-behavior: contain;
 }
 
 .side-add {
   position: absolute;
   z-index: 3;
-  width: 33px;
-  height: 33px;
+  width: var(--card-control-size);
+  height: var(--card-control-size);
   border: 0;
   border-radius: 50%;
   background: var(--bg);
@@ -630,7 +641,7 @@ body.is-dragging-card {
 }
 
 .side-add-left {
-  left: -16px;
+  left: var(--card-control-offset);
   top: 50%;
   transform: translateY(-50%) scale(0.88);
 }
@@ -640,7 +651,7 @@ body.is-dragging-card {
 }
 
 .side-add-right {
-  right: -16px;
+  right: var(--card-control-offset);
   top: 50%;
   transform: translateY(-50%) scale(0.88);
 }
@@ -650,7 +661,7 @@ body.is-dragging-card {
 }
 
 .side-add-top {
-  top: -16px;
+  top: var(--card-control-offset);
   left: 50%;
   transform: translateX(-50%) scale(0.88);
 }
@@ -660,7 +671,7 @@ body.is-dragging-card {
 }
 
 .side-add-bottom {
-  bottom: -16px;
+  bottom: var(--card-control-offset);
   left: 50%;
   transform: translateX(-50%) scale(0.88);
 }
@@ -1021,6 +1032,30 @@ body.is-exporting [contenteditable="true"]:focus {
   box-shadow: none;
 }
 
+@media (hover: none), (pointer: coarse) {
+  .proposal-card .drag-handle,
+  .proposal-card .remove-card,
+  .proposal-card .side-add {
+    opacity: 1;
+  }
+
+  .proposal-card .side-add-left {
+    transform: translateY(-50%) scale(1);
+  }
+
+  .proposal-card .side-add-right {
+    transform: translateY(-50%) scale(1);
+  }
+
+  .proposal-card .side-add-top {
+    transform: translateX(-50%) scale(1);
+  }
+
+  .proposal-card .side-add-bottom {
+    transform: translateX(-50%) scale(1);
+  }
+}
+
 @media (max-width: 900px) {
   .style-selector {
     align-items: start;
@@ -1074,13 +1109,15 @@ body.is-exporting [contenteditable="true"]:focus {
   }
 
   .proposal-card {
+    --card-control-offset: 4px;
+    --corner-control-offset: 4px;
     width: 100%;
     max-width: 340px;
     min-height: 0;
   }
 
   .card-inner {
-    padding: 18px 16px 14px;
+    padding: 38px 16px 14px;
     gap: 10px;
   }
 
@@ -1239,8 +1276,13 @@ body.is-exporting [contenteditable="true"]:focus {
     max-width: none;
   }
 
+  .proposal-card {
+    --card-control-size: 28px;
+    --corner-control-size: 21px;
+  }
+
   .card-inner {
-    padding: 14px 13px 12px;
+    padding: 34px 13px 12px;
     gap: 8px;
   }
 
@@ -1307,26 +1349,8 @@ body.is-exporting [contenteditable="true"]:focus {
   }
 
   .side-add {
-    width: 28px;
-    height: 28px;
     box-shadow: none;
     background: var(--bg);
-  }
-
-  .side-add-left {
-    left: 4px;
-  }
-
-  .side-add-right {
-    right: 4px;
-  }
-
-  .side-add-top {
-    top: 4px;
-  }
-
-  .side-add-bottom {
-    bottom: 4px;
   }
 
   .page-footer {
